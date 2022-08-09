@@ -23,7 +23,7 @@ namespace DynamicBlendShapeDriverSetup
         public override string Author => "Banane9";
         public override string Link => "https://github.com/Banane9/NeosDynamicBlendShapeDriverSetup";
         public override string Name => "DynamicBlendShapeDriverSetup";
-        public override string Version => "1.0.0";
+        public override string Version => "1.1.0";
 
         public override void OnEngineInit()
         {
@@ -95,7 +95,7 @@ namespace DynamicBlendShapeDriverSetup
                 for (var i = 0; i < renderer.BlendShapeCount; ++i)
                 {
                     var name = renderer.BlendShapeName(i);
-                    if (existingBinds.Contains(name))
+                    if (existingBinds.Contains(name) || renderer.TryGetBlendShape(name).IsDriven)
                         continue;
 
                     var shape = blendShapeDriver.BlendShapes.Add();
