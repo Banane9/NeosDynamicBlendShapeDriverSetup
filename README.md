@@ -1,7 +1,7 @@
 Dynamic Blend Shape Driver Setup
 ================================
 
-A [NeosModLoader](https://github.com/zkxs/NeosModLoader) mod for [Neos VR](https://neos.com/) that adds buttons to the DynamicBlendShapeDriver component to automatically add entries for all BlendShapes on the linked SkinnedMeshRenderer
+A [NeosModLoader](https://github.com/zkxs/NeosModLoader) mod for [Neos VR](https://neos.com/) that adds buttons to the DynamicBlendShapeDriver component to automatically add entries for all BlendShapes on the linked SkinnedMeshRenderer.
 
 ## Installation
 1. Install [NeosModLoader](https://github.com/zkxs/NeosModLoader).
