@@ -20,10 +20,13 @@ namespace DynamicBlendShapeDriverSetup
         [AutoRegisterConfigKey]
         private static ModConfigurationKey<bool> EnableSetupButton = new ModConfigurationKey<bool>("EnableSetupButton", "Enable adding a button to the DynamicBlendShapeDriver component to setup all BlendShapes from the renderer linked to it.", () => true);
 
+        [AutoRegisterConfigKey]
+        private static ModConfigurationKey<bool> TransferDrives = new ModConfigurationKey<bool>("TransferDrives", "Transfer already driven BlendShapes to the DynamicBlendShapeDriver. Skips adding them when disabled.", () => true);
+
         public override string Author => "Banane9";
         public override string Link => "https://github.com/Banane9/NeosDynamicBlendShapeDriverSetup";
         public override string Name => "DynamicBlendShapeDriverSetup";
-        public override string Version => "1.1.0";
+        public override string Version => "1.2.0";
 
         public override void OnEngineInit()
         {
@@ -95,12 +98,19 @@ namespace DynamicBlendShapeDriverSetup
                 for (var i = 0; i < renderer.BlendShapeCount; ++i)
                 {
                     var name = renderer.BlendShapeName(i);
-                    if (existingBinds.Contains(name) || renderer.TryGetBlendShape(name).IsDriven)
+                    var field = renderer.TryGetBlendShape(name);
+                    var driven = field.IsDriven || field.IsLinked;
+
+                    if (existingBinds.Contains(name) || (driven && !Config.GetValue(TransferDrives)))
                         continue;
 
                     var shape = blendShapeDriver.BlendShapes.Add();
                     shape.BlendShapeName.Value = name;
-                    shape.Value.Value = renderer.GetBlendShapeWeight(i);
+
+                    if (driven)
+                        (field.ActiveLink as LinkBase<IField<float>>).Target = shape.Value;
+                    else
+                        shape.Value.Value = renderer.GetBlendShapeWeight(i);
                 }
             }
         }
