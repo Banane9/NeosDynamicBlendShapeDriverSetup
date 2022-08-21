@@ -26,7 +26,7 @@ namespace DynamicBlendShapeDriverSetup
         public override string Author => "Banane9";
         public override string Link => "https://github.com/Banane9/NeosDynamicBlendShapeDriverSetup";
         public override string Name => "DynamicBlendShapeDriverSetup";
-        public override string Version => "1.2.0";
+        public override string Version => "1.3.0";
 
         public override void OnEngineInit()
         {
@@ -36,26 +36,14 @@ namespace DynamicBlendShapeDriverSetup
             harmony.PatchAll();
         }
 
-        [HarmonyPatch(typeof(DynamicBlendShapeDriver), nameof(DynamicBlendShapeDriver.BuildInspectorUI))]
+        [HarmonyPatch(typeof(DynamicBlendShapeDriver))]
         private static class DynamicBlendShapeDriverPatch
         {
             private static readonly MethodInfo updateBlendShapesMethod = typeof(DynamicBlendShapeDriver).GetMethod("UpdateBlendShapes", AccessTools.allDeclared);
 
-            private static HashSet<string> CleanBrokenBlendShapes(DynamicBlendShapeDriver blendShapeDriver)
-            {
-                var renderer = blendShapeDriver.Renderer.Target;
-
-                if (renderer.BlendShapeWeights.Count < renderer.BlendShapeCount)
-                    renderer.BlendShapeWeights.AddRange(Enumerable.Repeat(0f, renderer.BlendShapeCount - renderer.BlendShapeWeights.Count));
-
-                var availableBlendShapes = new HashSet<string>(Enumerable.Range(0, renderer.BlendShapeCount).Select(i => renderer.BlendShapeName(i)));
-
-                blendShapeDriver.BlendShapes.RemoveAll(shape => !availableBlendShapes.Contains(shape.BlendShapeName.Value));
-
-                return new HashSet<string>(blendShapeDriver.BlendShapes.Select(shape => shape.BlendShapeName.Value));
-            }
-
-            private static void Postfix(DynamicBlendShapeDriver __instance, UIBuilder ui)
+            [HarmonyPostfix]
+            [HarmonyPatch(nameof(DynamicBlendShapeDriver.BuildInspectorUI))]
+            private static void BuildInspectorUIPostfix(DynamicBlendShapeDriver __instance, UIBuilder ui)
             {
                 if (Config.GetValue(EnableSetupButton))
                 {
@@ -89,6 +77,20 @@ namespace DynamicBlendShapeDriverSetup
                 }
             }
 
+            private static HashSet<string> CleanBrokenBlendShapes(DynamicBlendShapeDriver blendShapeDriver)
+            {
+                var renderer = blendShapeDriver.Renderer.Target;
+
+                if (renderer.BlendShapeWeights.Count < renderer.BlendShapeCount)
+                    renderer.BlendShapeWeights.AddRange(Enumerable.Repeat(0f, renderer.BlendShapeCount - renderer.BlendShapeWeights.Count));
+
+                var availableBlendShapes = new HashSet<string>(Enumerable.Range(0, renderer.BlendShapeCount).Select(i => renderer.BlendShapeName(i)));
+
+                blendShapeDriver.BlendShapes.RemoveAll(shape => !availableBlendShapes.Contains(shape.BlendShapeName.Value));
+
+                return new HashSet<string>(blendShapeDriver.BlendShapes.Select(shape => shape.BlendShapeName.Value));
+            }
+
             private static void SetupBlendshapesFromRenderer(DynamicBlendShapeDriver blendShapeDriver)
             {
                 var renderer = blendShapeDriver.Renderer.Target;
@@ -112,6 +114,14 @@ namespace DynamicBlendShapeDriverSetup
                     else
                         shape.Value.Value = renderer.GetBlendShapeWeight(i);
                 }
+            }
+
+            [HarmonyPrefix]
+            [HarmonyPatch("UpdateBlendShapes")]
+            private static void UpdateBlendShapesPrefix(DynamicBlendShapeDriver __instance)
+            {
+                foreach (var blendshape in __instance.BlendShapes)
+                    blendshape._drive.ReleaseLink();
             }
         }
     }
